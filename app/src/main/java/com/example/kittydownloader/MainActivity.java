@@ -211,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
             int finalI = i;
             Ion.with(this)
                     .load("https://api.thecatapi.com/v1/images/search?size=full")
-                    .setHeader("x-api-key", BuildConfig.MyAPIKey)
+                    .setHeader("x-api-key", BuildConfig.API_KEY)
 
                     .asString().setCallback((e, cat_info) ->
 
