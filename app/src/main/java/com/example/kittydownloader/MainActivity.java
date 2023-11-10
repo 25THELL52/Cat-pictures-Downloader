@@ -1,15 +1,19 @@
 package com.example.kittydownloader;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -66,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
     ReceiverClassName receiver;
     IntentFilter intentFilter;
-    Boolean bolBroacastRegistred = false;
+    Boolean isBroadcastRegistered = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,14 +78,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Stetho.initializeWithDefaults(this);
 
-// registerReceiver so the application would be adressed by the operating system whenever it received
-// a broadcast with whose intent action matches the defined action set to the intentfilter .
+        
+
+// registerReceiver so the application would be addressed by the operating system whenever it receives
+// a broadcast with whose intent action matches the defined action set to the intent filter .
         {
             receiver = new ReceiverClassName();
             intentFilter = new IntentFilter();
             intentFilter.addAction("download complete");
             registerReceiver(receiver, intentFilter);
-            bolBroacastRegistred = true;
+            isBroadcastRegistered = true;
         }
 
         textView = findViewById(R.id.textView);
@@ -89,6 +95,8 @@ public class MainActivity extends AppCompatActivity {
         display = findViewById(R.id.display_ib);
         display.setVisibility(View.INVISIBLE);
         display_image.setVisibility(View.INVISIBLE);
+
+        // You can use ViewBinding to avoid this part ;
         gl = findViewById(R.id.gridLayout);
         i1 = findViewById(R.id.i1);
         i2 = findViewById(R.id.i2);
@@ -119,8 +127,11 @@ public class MainActivity extends AppCompatActivity {
         iblist.add(i10);
         iblist.add(i11);
         iblist.add(i12);
+        textView.setText("Welcome to the KITTY downloader !");
+
 
 //load images from the CAT API
+
         setup();
 
 // when the app launches from notification it does :
@@ -198,14 +209,42 @@ public class MainActivity extends AppCompatActivity {
 
 // setting onclicklistener of the load button to load more images
                 load.setOnClickListener(v -> {
-                    setup();
+                   setup();
                 });
 
             }
 
+    private void showNoInternetAlertDialog() {
+
+        // Create the object of AlertDialog Builder class
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+
+        // Set the message show for the Alert time
+        builder.setMessage("Check your network connection and load again ");
+
+        // Set Alert Title
+        builder.setTitle("Can't load images ");
+
+        // Set Cancelable false for when the user clicks on the outside the Dialog Box then it will remain show
+        builder.setCancelable(false);
+
+        // Set the positive button with yes name Lambda OnClickListener method is use of DialogInterface interface.
+        builder.setPositiveButton("Ok", (DialogInterface.OnClickListener) (dialog, which) -> {
+            // When the user click yes button then app will close
+        });
+
+        // Create the Alert dialog
+        AlertDialog alertDialog = builder.create();
+        // Show the Alert Dialog box
+        alertDialog.show();
+    }
+
+
 
     public void setup() {
 
+        if(isWifiConnected())
+        {
         for (int i = 0; i < 12; i++) {
 
             int finalI = i;
@@ -213,11 +252,11 @@ public class MainActivity extends AppCompatActivity {
                     .load("https://api.thecatapi.com/v1/images/search?size=full")
                     .setHeader("x-api-key", BuildConfig.API_KEY)
 
+
                     .asString().setCallback((e, cat_info) ->
 
 
             {
-                textView.setText("Welcome to the KITTY downloader !");
                 String cat_info_upg = cat_info.substring(1, cat_info.length() - 1);
                 Log.i("user", cat_info_upg);
                 try {
@@ -236,6 +275,9 @@ public class MainActivity extends AppCompatActivity {
             });
 
 
+        }}
+        else {
+            showNoInternetAlertDialog();
         }
 
 
@@ -253,6 +295,13 @@ public class MainActivity extends AppCompatActivity {
         Log.i("message", "sent intent");
 
     }
+    public boolean isWifiConnected()
+    {
+        ConnectivityManager cm = (ConnectivityManager)this.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        return (cm != null) && (cm.getActiveNetworkInfo() != null) &&
+                (cm.getActiveNetworkInfo().getType() == 1);
+    }
 
 
     public class ReceiverClassName extends BroadcastReceiver {
@@ -263,7 +312,7 @@ public class MainActivity extends AppCompatActivity {
 
             //Log.i("message", "broadcast was properly received");
             unregisterReceiver(receiver);
-            bolBroacastRegistred = false;
+            isBroadcastRegistered = false;
         }
     }
 
@@ -280,9 +329,9 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         Log.i("message", "onPause()");
 
-        if (receiver != null && bolBroacastRegistred == true) {
+        if (receiver != null && isBroadcastRegistered == true) {
             unregisterReceiver(receiver);
-            bolBroacastRegistred = false;
+            isBroadcastRegistered = false;
         }
     }
 
@@ -299,9 +348,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         Log.i("message", "onStart()");
-        if (receiver != null && bolBroacastRegistred == false) {
+        if (receiver != null && isBroadcastRegistered == false) {
             registerReceiver(receiver, intentFilter);
-            bolBroacastRegistred = true;
+            isBroadcastRegistered = true;
         }
     }
 
@@ -309,9 +358,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         Log.i("message", "onDestroy()");
-        if (receiver != null && bolBroacastRegistred == true) {
+        if (receiver != null && isBroadcastRegistered == true) {
             unregisterReceiver(receiver);
-            bolBroacastRegistred = false;
+            isBroadcastRegistered = false;
         }
 
 
